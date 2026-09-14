@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ドレミファソラシドをおぼえよう！</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .mode-select {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4a90e2;
+            color: white;
+            margin: 5px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        .game-panel {
+            display: none;
+            margin-top: 20px;
+        }
+        .active {
+            display: block;
+        }
+        /* 鍵盤のスタイル */
+        .keyboard {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .key {
+            width: 50px;
+            height: 180px;
+            background: white;
+            border: 1px solid #ccc;
+            margin: 2px;
+            border-radius: 0 0 5px 5px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        .key:active {
+            background: #e0e0e0;
+            height: 178px;
+            margin-top: 4px;
+        }
+        /* クイズ表示 */
+        .quiz-box {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            background: #eef7ff;
+            border-radius: 8px;
+            min-height: 40px;
+        }
+        .result-msg {
+            font-size: 20px;
+            font-weight: bold;
+            height: 30px;
+            margin-top: 10px;
+        }
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎶 ドレミ学習アプリ 🎶</h1>
+    <p>音符の名前と鍵盤の位置を楽しくおぼえよう！</p>
+
+    <div class="mode-select">
+        <button onclick="switchMode('free')">自由にならす</button>
+        <button onclick="switchMode('quiz')">おとあてクイズ</button>
+    </div>
+
+    <!-- 自由演奏モード -->
+    <div id="free-mode" class="game-panel active">
+        <h3>鍵盤をタッチして音をならしてみよう！</h3>
+        <div class="keyboard" id="kb-free"></div>
+    </div>
+
+    <!-- クイズモード -->
+    <div id="quiz-mode" class="game-panel">
+        <h3>鳴った音の名前を当ててね！</h3>
+        <button onclick="startQuiz()">クイズをはじめる / 次の問題</button>
+        <div class="quiz-box" id="quiz-question">「クイズをはじめる」を押してね</div>
+        <div class="keyboard" id="kb-quiz"></div>
+        <div class="result-msg" id="quiz-result"></div>
+    </div>
+</div>
+
+<script>
+    // 音の定義 (ドレミファソラシドの周波数 Hz)
+    const scale = [
+        { name: 'ド', freq: 261.63 },
+        { name: 'レ', freq: 293.66 },
+        { name: 'ミ', freq: 329.63 },
+        { name: 'ファ', freq: 349.23 },
+        { name: 'ソ', freq: 392.00 },
+        { name: 'ラ', freq: 440.00 },
+        { name: 'シ', freq: 493.88 },
+        { name: 'ド', freq: 523.25 }
+    ];
+
+    let audioCtx = null;
+    let currentQuizIndex = null;
+
+    // オーディオ文脈の初期化（ブラウザ制限の解除用）
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    // 音を鳴らす関数
+    function playNote(freq) {
+        initAudio();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sine'; // やさしい正弦波の音
+        oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        // 音の消え方を滑らかにする (ブツ切り音防止)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.8);
+    }
+
+    // 鍵盤の動的生成
+    function createKeyboard(elementId, isQuizMode) {
+        const kb = document.getElementById(elementId);
+        kb.innerHTML = '';
+        scale.forEach((note, index) => {
+            const key = document.createElement('div');
+            key.className = 'key';
+            // クイズモードの時は2つ目のドを「ド↑」と表記して区別
+            let displayName = note.name;
+            if (index === 7) displayName = 'ド↑';
+            
+            key.innerText = displayName;
+            
+            key.addEventListener('mousedown', () => {
+                if (isQuizMode) {
+                    checkAnswer(index);
+                } else {
+                    playNote(note.freq);
+                }
+            });
+            // スマホ対応
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (isQuizMode) {
+                    checkAnswer(index);
+                } else {
+                    playNote(note.freq);
+                }
+            });
+            kb.appendChild(key);
+        });
+    }
+
+    // モード切り替え
+    function switchMode(mode) {
+        document.getElementById('free-mode').classList.remove('active');
+        document.getElementById('quiz-mode').classList.remove('active');
+        document.getElementById('quiz-result').innerText = '';
+        
+        if (mode === 'free') {
+            document.getElementById('free-mode').classList.add('active');
+            createKeyboard('kb-free', false);
+        } else {
+            document.getElementById('quiz-mode').classList.add('active');
+            document.getElementById('quiz-question').innerText = '「クイズをはじめる」を押してね';
+            createKeyboard('kb-quiz', true);
+        }
+    }
+
+    // クイズ開始
+    function startQuiz() {
+        initAudio();
+        document.getElementById('quiz-result').innerText = '';
+        // ランダムに音を決定
+        currentQuizIndex = Math.floor(Math.random() * scale.length);
+        document.getElementById('quiz-question').innerText = '♪ どんな音がきこえたかな？ (再生中)';
+        
+        // 少し遅らせて音を鳴らす
+        setTimeout(() => {
+            playNote(scale[currentQuizIndex].freq);
+        }, 200);
+    }
+
+    // 正誤判定
+    function checkAnswer(selectedIndex) {
+        if (currentQuizIndex === null) return;
+        
+        const resultDiv = document.getElementById('quiz-result');
+        // 選んだ音自体も鳴らす
+        playNote(scale[selectedIndex].freq);
+
+        if (selectedIndex === currentQuizIndex) {
+            resultDiv.innerHTML = '<span class="correct">⭕️ せいかい！ すごい！</span>';
+            currentQuizIndex = null; // クイズ終了、次を待つ
+            document.getElementById('quiz-question').innerText = 'せいかい！次の問題に進んでね。';
+        } else {
+            resultDiv.innerHTML = '<span class="wrong">❌ ざんねん！ もういちど聴いてみてね</span>';
+        }
+    }
+
+    // 初回起動時
+    createKeyboard('kb-free', false);
+</script>
+
+</body>
+</html>
