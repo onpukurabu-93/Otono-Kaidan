@@ -5,17 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ドレミをおぼえよう！</title>
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             text-align: center;
             background-color: #f7f9fc;
             margin: 0;
-            padding: 20px 10px;
+            padding: 10px;
             color: #333;
             display: flex;
             flex-direction: column;
@@ -29,173 +25,103 @@
             justify-content: center;
             align-items: center;
         }
-        h1 {
-            color: #ff6f61;
-            font-size: 24px;
-            margin: 0 0 10px 0;
-        }
-        .mode-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+        h1 { color: #ff6f61; font-size: 22px; margin: 0 0 5px 0; }
+        .mode-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; }
         button.mode-btn {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            box-shadow: 0 3px #388e3c;
-            font-weight: bold;
+            background-color: #4caf50; color: white; border: none; padding: 8px 16px;
+            font-size: 14px; border-radius: 20px; cursor: pointer; box-shadow: 0 3px #388e3c; font-weight: bold;
         }
-        button.mode-btn:active {
-            box-shadow: 0 0 #388e3c;
-            transform: translateY(3px);
-        }
+        button.mode-btn:active { box-shadow: 0 0 #388e3c; transform: translateY(3px); }
         #quiz-area {
-            display: none;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 340px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            display: none; background: white; padding: 12px; border-radius: 10px;
+            width: 90%; max-width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px;
         }
-        #msg {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px 0;
-            min-height: 26px;
-        }
+        #msg { font-size: 16px; font-weight: bold; margin: 5px 0; min-height: 24px; }
         
-        /* 🎹 横並びピアノ鍵盤のコンテナ */
-        .piano-container {
+        /* 🎹 ピアノコンテナ（画像のサイズに自動で合わせる） */
+        .piano-wrapper {
             position: relative;
             width: 100%;
             max-width: 360px;
-            height: 200px;
-            margin: 0 auto 30px auto;
-            background: #222;
+            margin: 0 auto 10px auto;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
             border-radius: 8px;
-            padding: 4px 2px 15px 2px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            overflow: hidden;
         }
+        .piano-image { width: 100%; display: block; pointer-events: none; }
+        .touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
         
-        /* 白鍵 */
-        .white-keys {
-            display: flex;
-            height: 100%;
-            width: 100%;
-        }
-        .key.white {
-            flex: 1;
-            background: linear-gradient(to bottom, #fff 0%, #f3f3f3 100%);
-            border-right: 1px solid #ccc;
-            border-radius: 0 0 4px 4px;
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 15px;
-            font-weight: bold;
-            font-size: 15px;
-            color: #444;
+        /* 🔴 位置調整用の透明（または半透明赤）な鍵盤ボタン */
+        .key-trigger {
+            position: absolute;
             cursor: pointer;
-            z-index: 1;
-            box-shadow: inset 0 -4px 0 #edd;
+            /* 👇 調整中はここを rgba(255, 0, 0, 0.4) にすると赤い四角が見えます。完成したら transparent にします */
+            background: rgba(255, 0, 0, 0.4); 
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: background 0.1s;
         }
-        .key.white:last-child {
-            border-right: none;
-        }
-        .key.white:active, .key.white.active {
-            background: #e0e0e0;
-            box-shadow: inset 0 -1px 0 #ccc;
-        }
+        .key-trigger:active { background: rgba(0, 0, 0, 0.3) !important; }
 
-        /* 黒鍵の配置用オーバーレイ */
-        .black-keys-overlay {
-            position: absolute;
-            top: 4px;
-            left: 2px;
-            right: 2px;
-            height: 60%;
-            pointer-events: none;
-            display: flex;
+        /* 🛠️ 位置調整用のコントローラーUI */
+        .adjust-panel {
+            background: #eee; padding: 8px; font-size: 12px; border-radius: 5px;
+            margin: 5px auto; width: 100%; max-width: 360px; text-align: left;
         }
-        .black-gap {
-            flex: 1;
-            position: relative;
-        }
-        .key.black {
-            position: absolute;
-            right: -10px;
-            width: 20px;
-            height: 100%;
-            background: linear-gradient(to bottom, #444 0%, #111 100%);
-            border-radius: 0 0 3px 3px;
-            z-index: 2;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
-        }
+        .adjust-panel select, .adjust-panel input { width: 100%; margin: 3px 0 8px 0; }
     </style>
 </head>
 <body>
 
     <div class="top-content">
         <h1>🎵 ドレミをおぼえよう！</h1>
-        
         <div class="mode-container">
             <button class="mode-btn" onclick="startFreePlay()">えんそうモード</button>
             <button class="mode-btn" onclick="startQuiz()" style="background-color: #2196f3; box-shadow: 0 3px #1976d2;">おとあてクイズ</button>
         </div>
-
         <div id="quiz-area">
             <div id="msg">「おとをきく」をおしてね</div>
             <button class="mode-btn" style="background-color:#ff9800; box-shadow:0 3px #e65100; padding: 6px 16px; font-size:14px;" onclick="playTargetSound()">📢 おとをきく</button>
         </div>
     </div>
 
-    <!-- 🎹 下半分のピアノ鍵盤 -->
-    <div class="piano-container">
-        <div class="white-keys">
-            <div class="key white" onclick="pressKey('ド')">ド</div>
-            <div class="key white" onclick="pressKey('レ')">レ</div>
-            <div class="key white" onclick="pressKey('ミ')">ミ</div>
-            <div class="key white" onclick="pressKey('ファ')">ファ</div>
-            <div class="key white" onclick="pressKey('ソ')">ソ</div>
-            <div class="key white" onclick="pressKey('ラ')">ラ</div>
-            <div class="key white" onclick="pressKey('シ')">シ</div>
-            <div class="key white" onclick="pressKey('ド↑')">ド</div>
-        </div>
-
-        <div class="black-keys-overlay">
-            <div class="black-gap"><div class="key black"></div></div>
-            <div class="black-gap"><div class="key black"></div></div>
-            <div class="black-gap"></div>
-            <div class="black-gap"><div class="key black"></div></div>
-            <div class="black-gap"><div class="key black"></div></div>
-            <div class="black-gap"><div class="key black"></div></div>
-            <div class="black-gap"></div>
+    <!-- 🎹 ピアノ鍵盤領域 -->
+    <div class="piano-wrapper">
+        <img src="otonokaidan.png" alt="ピアノ鍵盤" class="piano-image">
+        <div class="touch-overlay" id="overlay">
+            <!-- JavaScriptでここにボタンを生成します -->
         </div>
     </div>
 
-    <script>
-        // 用意してもらった音声ファイルのマッピング
-        const voiceFiles = {
-            'ド': 'ohesonoど.mp3',
-            'レ': 'れ.mp3',
-            'ミ': 'み.mp3',
-            'ファ': 'ふぁ.mp3',
-            'ソ': 'そ.mp3',
-            'ラ': 'ら.mp3',
-            'シ': 'し.mp3',
-            'ド↑': 'takaiど.mp3'
-        };
+    <!-- 🛠️ 【調整用つまみ】位置がぴったり合ったらこの部品ごとコードから削除してOKです -->
+    <div class="adjust-panel">
+        <strong>🔧 ボタンの位置調整（完成したらこのパネルは消せます）</strong><br>
+        <label>調整する音: <select id="select-note" onchange="loadKeyConfig()"></select></label>
+        <label>横の位置 (左端からの%): <input type="range" id="input-left" min="0" max="100" step="0.5" oninput="updateKeyConfig()"></label>
+        <label>縦の位置 (上端からの%): <input type="range" id="input-top" min="0" max="100" step="0.5" oninput="updateKeyConfig()"></label>
+        <label>ボタンの横幅 (%): <input type="range" id="input-width" min="1" max="100" step="0.5" oninput="updateKeyConfig()"></label>
+        <label>ボタンの縦幅 (%): <input type="range" id="input-height" min="1" max="100" step="0.5" oninput="updateKeyConfig()"></label>
+        <button onclick="exportConfig()" style="width:100%; padding:5px; background:#444; color:#fff; border:none; border-radius:3px;">現在の設定数値をコピーする</button>
+    </div>
 
-        // 各音の周波数データ（クイズ用のピアノ音に使用）
+    <script>
+        // ▽▽▽ 【ここを後から書き換えます】 ▽▽▽
+        // 初期状態：均等に並んでいます（画像に合わせてここが自動で変化します）
+        let keyLayouts = {
+            'ド':   { left: 0,    top: 50, width: 12.5, height: 50 },
+            'レ':   { left: 12.5, top: 50, width: 12.5, height: 50 },
+            'ミ':   { left: 25,   top: 50, width: 12.5, height: 50 },
+            'ファ': { left: 37.5, top: 50, width: 12.5, height: 50 },
+            'ソ':   { left: 50,   top: 50, width: 12.5, height: 50 },
+            'ラ':   { left: 62.5, top: 50, width: 12.5, height: 50 },
+            'シ':   { left: 75,   top: 50, width: 12.5, height: 50 },
+            'ド↑': { left: 87.5, top: 50, width: 12.5, height: 50 }
+        };
+        // △△△ 【ここを後から書き換えます】 △△△
+
+        const voiceFiles = {
+            'ド': 'おへそのド.mp3', 'レ': 'れ.mp3', 'ミ': 'み.mp3', 'ファ': 'ふぁ.mp3',
+            'ソ': 'そ.mp3', 'ラ': 'ら.mp3', 'シ': 'し.mp3', 'ド↑': '高いど.mp3'
+        };
         const pianoFreqs = {
             'ド': 261.63, 'レ': 293.66, 'ミ': 329.63, 'ファ': 349.23,
             'ソ': 392.00, 'ラ': 440.00, 'シ': 493.88, 'ド↑': 523.25
@@ -203,59 +129,91 @@
 
         let audioCtx = null;
         function getAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             return audioCtx;
         }
 
-        // 🎵 クイズ用の「綺麗なピアノの音」をプログラムで合成して鳴らす関数
         function playPianoTone(frequency) {
             const ctx = getAudioContext();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            // ピアノに近い減衰音を作るため、複数の倍音をほんのり混ぜる
-            osc.type = 'sine'; 
-            osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-            
-            // 音量の変化（アタックは強く、その後スッと消えるピアノの特性）
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(frequency, ctx.currentTime);
             gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02); // 素早い立ち上がり
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2); // 長めの余韻
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            osc.start();
-            osc.stop(ctx.currentTime + 1.2);
+            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 1.2);
         }
 
-        // 🗣️ 鍵盤を押したときの「声の音声」を再生する関数
         function playVoice(noteName) {
             const filename = voiceFiles[noteName];
             if (filename) {
                 const audio = new Audio(filename);
-                audio.currentTime = 0;
-                audio.play().catch(e => console.log("音声再生エラー:", e));
+                audio.currentTime = 0; audio.play().catch(e => console.log(e));
             }
         }
 
-        let isQuizMode = false;
-        let currentTarget = null;
+        // ボタンの画面配置を生成する
+        function renderKeys() {
+            const overlay = document.getElementById('overlay');
+            overlay.innerHTML = '';
+            for (let note in keyLayouts) {
+                const box = keyLayouts[note];
+                const btn = document.createElement('div');
+                btn.className = 'key-trigger';
+                btn.style.left = box.left + '%';
+                btn.style.top = box.top + '%';
+                btn.style.width = box.width + '%';
+                btn.style.height = box.height + '%';
+                btn.onclick = () => pressKey(note);
+                overlay.appendChild(btn);
+            }
+        }
+
+        // 調整パネルの制御
+        function initAdjustPanel() {
+            const select = document.getElementById('select-note');
+            for (let note in keyLayouts) {
+                const opt = document.createElement('option');
+                opt.value = note; opt.innerText = note;
+                select.appendChild(opt);
+            }
+            loadKeyConfig();
+        }
+
+        function loadKeyConfig() {
+            const note = document.getElementById('select-note').value;
+            const config = keyLayouts[note];
+            document.getElementById('input-left').value = config.left;
+            document.getElementById('input-top').value = config.top;
+            document.getElementById('input-width').value = config.width;
+            document.getElementById('input-height').value = config.height;
+        }
+
+        function updateKeyConfig() {
+            const note = document.getElementById('select-note').value;
+            keyLayouts[note] = {
+                left: parseFloat(document.getElementById('input-left').value),
+                top: parseFloat(document.getElementById('input-top').value),
+                width: parseFloat(document.getElementById('input-width').value),
+                height: parseFloat(document.getElementById('input-height').value)
+            };
+            renderKeys();
+        }
+
+        function exportConfig() {
+            const str = JSON.stringify(keyLayouts, null, 4);
+            navigator.clipboard.writeText(str);
+            alert("位置データをコピーしました！このデータを送っていただければ固定化します。");
+        }
+
+        // ゲームロジック
+        let isQuizMode = false; let currentTarget = null;
         const quizNotes = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド↑'];
 
-        // 鍵盤が押されたとき
         function pressKey(noteName) {
-            // 演奏時・解答時は必ず「声の音声」を鳴らす
             playVoice(noteName);
-
             if (isQuizMode) {
-                if (!currentTarget) {
-                    document.getElementById('msg').innerText = 'さきに「おとをきく」をおしてね！';
-                    return;
-                }
-                
+                if (!currentTarget) { document.getElementById('msg').innerText = 'さきに「おとをきく」をおしてね！'; return; }
                 if (noteName === currentTarget) {
                     document.getElementById('msg').innerHTML = '<span style="color:green;">⭕ せいかい！ すごい！</span>';
                     currentTarget = null; 
@@ -265,31 +223,4 @@
             }
         }
 
-        function startFreePlay() {
-            isQuizMode = false;
-            document.getElementById('quiz-area').style.display = 'none';
-        }
-
-        function startQuiz() {
-            isQuizMode = true;
-            currentTarget = null;
-            document.getElementById('quiz-area').style.display = 'block';
-            document.getElementById('msg').innerText = '「おとをきく」ボタンをおしてね';
-        }
-
-        // クイズの音をきくとき
-        function playTargetSound() {
-            if (!isQuizMode) return;
-            if (!currentTarget) {
-                const randomIndex = Math.floor(Math.random() * quizNotes.length);
-                currentTarget = quizNotes[randomIndex];
-            }
-            
-            // クイズの問題を出すときは、声ではなく「ピアノの音」を鳴らす
-            const freq = pianoFreqs[currentTarget];
-            playPianoTone(freq);
-            document.getElementById('msg').innerText = 'いまの音はなーんだ？';
-        }
-    </script>
-</body>
-</html>
+        function startFreePlay() { isQuizMode = false; document.getElementById('quiz-area').style.display = 'none'; }
