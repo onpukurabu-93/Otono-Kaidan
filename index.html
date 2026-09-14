@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ドレミをおぼえよう！</title>
     <style>
-        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+        /* 画面全体のズレ防止とスマホ最適化 */
+        * { 
+            box-sizing: border-box; 
+            -webkit-user-select: none; 
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             text-align: center;
             background-color: #f7f9fc;
             margin: 0;
-            padding: 10px;
+            padding: 20px 10px;
             color: #333;
             display: flex;
             flex-direction: column;
             height: 100vh;
             justify-content: space-between;
+            overflow: hidden; /* スマホのバウンススクロールを防止 */
         }
         .top-content {
             flex: 1;
@@ -25,110 +32,100 @@
             justify-content: center;
             align-items: center;
         }
-        h1 { color: #ff6f61; font-size: 22px; margin: 0 0 5px 0; }
-        .mode-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; }
+        h1 { color: #ff6f61; font-size: 24px; margin: 0 0 10px 0; }
+        .mode-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
         button.mode-btn {
-            background-color: #4caf50; color: white; border: none; padding: 8px 16px;
-            font-size: 14px; border-radius: 20px; cursor: pointer; box-shadow: 0 3px #388e3c; font-weight: bold;
+            background-color: #4caf50; color: white; border: none; padding: 10px 20px;
+            font-size: 15px; border-radius: 20px; cursor: pointer; box-shadow: 0 3px #388e3c; font-weight: bold;
         }
         button.mode-btn:active { box-shadow: 0 0 #388e3c; transform: translateY(3px); }
         #quiz-area {
-            display: none; background: white; padding: 12px; border-radius: 10px;
-            width: 90%; max-width: 340px; box-shadow: 0 2px 8 rgba(0,0,0,0.05); margin-bottom: 10px;
+            display: none; background: white; padding: 15px; border-radius: 10px;
+            width: 90%; max-width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;
         }
-        #msg { font-size: 16px; font-weight: bold; margin: 5px 0; min-height: 24px; }
+        #msg { font-size: 18px; font-weight: bold; margin: 10px 0; min-height: 26px; }
         
-        /* 🎹 ピアノコンテナ（スマホ縦長画面で、画像は横向きに配置） */
+        /* 🎹 ピアノコンテナ（画像のサイズに自動でフィット） */
         .piano-wrapper {
             position: relative;
             width: 100%;
-            max-width: 360px;
-            margin: 0 auto 10px auto;
+            max-width: 360px; 
+            margin: 0 auto 30px auto;
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
             border-radius: 8px;
             overflow: hidden;
         }
         .piano-image { width: 100%; display: block; pointer-events: none; }
-        .touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
         
-        /* 🔴 位置調整用の半透明な赤ボタン（横並び） */
+        /* 画像の真上に重なる透明なタッチパネル */
+        .touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 10; }
+        
+        /* 透明な鍵盤エリア（8等分・タップのズレや遅延を解消） */
         .key-trigger {
-            position: absolute;
+            flex: 1;
+            height: 100%;
             cursor: pointer;
-            background: rgba(255, 0, 0, 0.4); /* 調整用の赤色 */
-            border: 1px solid rgba(255,255,255,0.6);
+            background: transparent;
             transition: background 0.1s;
+            touch-action: manipulation; /* スマホのダブルタップズームによる連打遅延を防止 */
         }
-        .key-trigger:active { background: rgba(0, 0, 0, 0.3) !important; }
-
-        /* 🔧 調整パネル */
-        .adjust-panel {
-            background: #eee; padding: 10px; font-size: 12px; border-radius: 5px;
-            margin: 0 auto; width: 100%; max-width: 360px; text-align: left;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-        }
-        .adjust-panel label { display: block; margin-top: 4px; font-weight: bold; }
-        .adjust-panel select, .adjust-panel input { width: 100%; margin: 2px 0 4px 0; }
+        .key-trigger:active { background: rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body>
 
     <div class="top-content">
         <h1>🎵 ドレミをおぼえよう！</h1>
+        
         <div class="mode-container">
             <button class="mode-btn" onclick="startFreePlay()">えんそうモード</button>
             <button class="mode-btn" onclick="startQuiz()" style="background-color: #2196f3; box-shadow: 0 3px #1976d2;">おとあてクイズ</button>
         </div>
+
         <div id="quiz-area">
             <div id="msg">「おとをきく」をおしてね</div>
             <button class="mode-btn" style="background-color:#ff9800; box-shadow:0 3px #e65100; padding: 6px 16px; font-size:14px;" onclick="playTargetSound()">📢 おとをきく</button>
         </div>
     </div>
 
-    <!-- 🎹 ピアノ鍵盤領域（横並びの画像の上にボタンを重ねる） -->
+    <!-- 🎹 下半分のエリア -->
     <div class="piano-wrapper">
         <img src="otonokaidan.png" alt="ピアノ鍵盤" class="piano-image">
-        <div class="touch-overlay" id="overlay">
-            <!-- ここに横並びのボタンが自動生成されます -->
+        <div class="touch-overlay">
+            <div class="key-trigger" onclick="pressKey('ド')"></div>
+            <div class="key-trigger" onclick="pressKey('レ')"></div>
+            <div class="key-trigger" onclick="pressKey('ミ')"></div>
+            <div class="key-trigger" onclick="pressKey('ファ')"></div>
+            <div class="key-trigger" onclick="pressKey('ソ')"></div>
+            <div class="key-trigger" onclick="pressKey('ラ')"></div>
+            <div class="key-trigger" onclick="pressKey('シ')"></div>
+            <div class="key-trigger" onclick="pressKey('ド↑')"></div>
         </div>
     </div>
 
-    <!-- 🛠️ 調整用パネル -->
-    <div class="adjust-panel">
-        <strong>🔧 ボタンの位置調整（つまみを動かすと赤枠が動きます）</strong><br>
-        <label>調整する音: <select id="select-note" onchange="loadKeyConfig()"></select></label>
-        <label>↔️ 横の位置 (左端からの%): <input type="range" id="input-left" min="0" max="100" step="0.2" oninput="updateKeyConfig()"></label>
-        <label>↔️ ボタンの横幅 (%): <input type="range" id="input-width" min="1" max="50" step="0.2" oninput="updateKeyConfig()"></label>
-        <label>↕️ 縦の位置 (上端からの%): <input type="range" id="input-top" min="0" max="100" step="0.2" oninput="updateKeyConfig()"></label>
-        <label>↕️ ボタンの縦幅 (%): <input type="range" id="input-height" min="1" max="100" step="0.2" oninput="updateKeyConfig()"></label>
-        <button onclick="exportConfig()" style="width:100%; padding:6px; background:#444; color:#fff; border:none; border-radius:3px; font-weight:bold; cursor:pointer; margin-top:5px;">完了！設定データをコピーする</button>
-    </div>
-
     <script>
-        // 初期状態：横に均等に8分割して配置しています
-        let keyLayouts = {
-            'ド':   { left: 0,    top: 20, width: 12.5, height: 80 },
-            'レ':   { left: 12.5, top: 20, width: 12.5, height: 80 },
-            'ミ':   { left: 25,   top: 20, width: 12.5, height: 80 },
-            'ファ': { left: 37.5, top: 20, width: 12.5, height: 80 },
-            'ソ':   { left: 50,   top: 20, width: 12.5, height: 80 },
-            'ラ':   { left: 62.5, top: 20, width: 12.5, height: 80 },
-            'シ':   { left: 75,   top: 20, width: 12.5, height: 80 },
-            'ド↑': { left: 87.5, top: 20, width: 12.5, height: 80 }
-        };
-
+        // 音声ファイルの設定（「ラ」の表記ミスを完全修正）
         const voiceFiles = {
             'ド': 'おへそのド.mp3', 'レ': 'れ.mp3', 'ミ': 'み.mp3', 'ファ': 'ふぁ.mp3',
             'ソ': 'そ.mp3', 'ラ': 'ら.mp3', 'シ': 'し.mp3', 'ド↑': '高いど.mp3'
         };
+
         const pianoFreqs = {
             'ド': 261.63, 'レ': 293.66, 'ミ': 329.63, 'ファ': 349.23,
             'ソ': 392.00, 'ラ': 440.00, 'シ': 493.88, 'ド↑': 523.25
         };
 
+        // 事前にAudioオブジェクトを生成（スマホでの再生遅延・音がブツ切れになる現象を回避）
+        const audioCache = {};
+        for (let note in voiceFiles) {
+            audioCache[note] = new Audio(voiceFiles[note]);
+            audioCache[note].load();
+        }
+
         let audioCtx = null;
         function getAudioContext() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             return audioCtx;
         }
 
@@ -143,83 +140,47 @@
             osc.start(); osc.stop(ctx.currentTime + 1.2);
         }
 
+        // 連打しても音が遅れずに重なって鳴るように改善
         function playVoice(noteName) {
-            const filename = voiceFiles[noteName];
-            if (filename) {
-                const audio = new Audio(filename);
-                audio.currentTime = 0; audio.play().catch(e => console.log(e));
+            const audio = audioCache[noteName];
+            if (audio) {
+                // すでに再生中の場合は最初に戻して即再生（連打対応）
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("再生制限クリア中:", e));
             }
-        }
-
-        // 画面に横並びの赤いボタンを生成
-        function renderKeys() {
-            const overlay = document.getElementById('overlay');
-            overlay.innerHTML = '';
-            for (let note in keyLayouts) {
-                const box = keyLayouts[note];
-                const btn = document.createElement('div');
-                btn.className = 'key-trigger';
-                btn.id = 'btn-' + note;
-                btn.style.left = box.left + '%';
-                btn.style.top = box.top + '%';
-                btn.style.width = box.width + '%';
-                btn.style.height = box.height + '%';
-                btn.onclick = () => pressKey(note);
-                overlay.appendChild(btn);
-            }
-        }
-
-        function initAdjustPanel() {
-            const select = document.getElementById('select-note');
-            select.innerHTML = '';
-            for (let note in keyLayouts) {
-                const opt = document.createElement('option');
-                opt.value = note; opt.innerText = note;
-                select.appendChild(opt);
-            }
-            loadKeyConfig();
-        }
-
-        function loadKeyConfig() {
-            const note = document.getElementById('select-note').value;
-            const config = keyLayouts[note];
-            document.getElementById('input-left').value = config.left;
-            document.getElementById('input-width').value = config.width;
-            document.getElementById('input-top').value = config.top;
-            document.getElementById('input-height').value = config.height;
-        }
-
-        // スライダーを動かした瞬間、赤枠の「位置」と「幅・高さ」をリアルタイムに書き換える
-        function updateKeyConfig() {
-            const note = document.getElementById('select-note').value;
-            const leftVal = parseFloat(document.getElementById('input-left').value);
-            const widthVal = parseFloat(document.getElementById('input-width').value);
-            const topVal = parseFloat(document.getElementById('input-top').value);
-            const heightVal = parseFloat(document.getElementById('input-height').value);
-            
-            // データを更新
-            keyLayouts[note] = { left: leftVal, top: topVal, width: widthVal, height: heightVal };
-            
-            // 画面上の赤い四角をリアルタイムに変形
-            const targetBtn = document.getElementById('btn-' + note);
-            if (targetBtn) {
-                targetBtn.style.left = leftVal + '%';
-                targetBtn.style.width = widthVal + '%';
-                targetBtn.style.top = topVal + '%';
-                targetBtn.style.height = heightVal + '%';
-            }
-        }
-
-        function exportConfig() {
-            const str = JSON.stringify(keyLayouts, null, 4);
-            navigator.clipboard.writeText(str).then(() => {
-                alert("位置データをコピーしました！チャットに貼り付けて教えてください。");
-            }).catch(() => {
-                alert("下のデータをコピーしてチャットに貼り付けてください：\n\n" + str);
-            });
         }
 
         let isQuizMode = false; let currentTarget = null;
         const quizNotes = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド↑'];
 
         function pressKey(noteName) {
+            getAudioContext(); // タップと同時にオーディオのブロックを解除
+            playVoice(noteName);
+
+            if (isQuizMode) {
+                if (!currentTarget) { document.getElementById('msg').innerText = 'さきに「おとをきく」をおしてね！'; return; }
+                if (noteName === currentTarget) {
+                    document.getElementById('msg').innerHTML = '<span style="color:green;">⭕ せいかい！ すごい！</span>';
+                    currentTarget = null; 
+                } else {
+                    document.getElementById('msg').innerHTML = '<span style="color:red;">❌ ちがうよ！もう一回きいてみてね</span>';
+                }
+            }
+        }
+
+        function startFreePlay() { isQuizMode = false; document.getElementById('quiz-area').style.display = 'none'; }
+        function startQuiz() { isQuizMode = true; currentTarget = null; document.getElementById('quiz-area').style.display = 'block'; document.getElementById('msg').innerText = '「おとをきく」ボタンをおしてね'; }
+        
+        function playTargetSound() {
+            if (!isQuizMode) return;
+            if (!currentTarget) currentTarget = quizNotes[Math.floor(Math.random() * quizNotes.length)];
+            playPianoTone(pianoFreqs[currentTarget]);
+            document.getElementById('msg').innerText = 'いまの音はなーんだ？';
+        }
+
+        // スマホのブラウザ保護ロック（初回の画面タッチで音が出る状態にする）
+        document.addEventListener('click', () => getAudioContext(), { once: true });
+        document.addEventListener('touchstart', () => getAudioContext(), { once: true });
+    </script>
+</body>
+</html>
