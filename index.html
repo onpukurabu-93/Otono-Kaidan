@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ドレミをおぼえよう！</title>
     <style>
-        /* 縦型画面に最適化 */
         * {
             box-sizing: border-box;
             -webkit-user-select: none;
@@ -16,35 +15,37 @@
             text-align: center;
             background-color: #f7f9fc;
             margin: 0;
-            padding: 10px;
+            padding: 20px 10px;
             color: #333;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
+            justify-content: space-between;
+        }
+        .top-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         h1 {
             color: #ff6f61;
-            font-size: 22px;
-            margin: 5px 0;
-        }
-        p {
-            font-size: 13px;
+            font-size: 24px;
             margin: 0 0 10px 0;
-            color: #666;
         }
         .mode-container {
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         button.mode-btn {
             background-color: #4caf50;
             color: white;
             border: none;
-            padding: 8px 15px;
-            font-size: 14px;
+            padding: 10px 20px;
+            font-size: 15px;
             border-radius: 20px;
             cursor: pointer;
             box-shadow: 0 3px #388e3c;
@@ -57,137 +58,132 @@
         #quiz-area {
             display: none;
             background: white;
-            padding: 10px;
+            padding: 15px;
             border-radius: 10px;
-            margin: 0 auto 10px auto;
             width: 90%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            max-width: 340px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
         #msg {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            margin: 8px 0;
-            min-height: 24px;
+            margin: 10px 0;
+            min-height: 26px;
         }
         
-        /* 縦型のピアノ鍵盤レイアウト */
+        /* 🎹 横並びピアノ鍵盤のコンテナ */
         .piano-container {
-            flex: 1;
             position: relative;
             width: 100%;
-            max-width: 360px;
-            margin: 0 auto;
+            max-width: 360px; /* スマホの幅にフィット */
+            height: 200px;
+            margin: 0 auto 30px auto;
             background: #222;
-            border-radius: 10px;
-            padding: 5px;
+            border-radius: 8px;
+            padding: 4px 2px 15px 2px;
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
         }
         
-        /* 白鍵のスタイル（縦に並べる） */
+        /* 白鍵（左から右へ並ぶ） */
         .white-keys {
             display: flex;
-            flex-direction: column;
             height: 100%;
+            width: 100%;
         }
         .key.white {
-            background: linear-gradient(to right, #fff 0%, #f3f3f3 100%);
-            border-bottom: 1px solid #bbb;
             flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding-left: 25px;
-            font-weight: bold;
-            font-size: 18px;
-            color: #555;
-            cursor: pointer;
-            border-radius: 4px;
+            background: linear-gradient(to bottom, #fff 0%, #f3f3f3 100%);
+            border-right: 1px solid #ccc;
+            border-radius: 0 0 4px 4px;
             position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 15px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #444;
+            cursor: pointer;
             z-index: 1;
+            box-shadow: inset 0 -4px 0 #edd;
+        }
+        .key.white:last-child {
+            border-right: none;
         }
         .key.white:active, .key.white.active {
             background: #e0e0e0;
-        }
-        .key.white:last-child {
-            border-bottom: none;
+            box-shadow: inset 0 -1px 0 #ccc;
         }
 
-        /* 黒鍵のレイアウトとスタイル */
+        /* 黒鍵の配置用オーバーレイ */
         .black-keys-overlay {
             position: absolute;
-            top: 5px;
-            bottom: 5px;
-            left: 5px;
-            right: 5px;
-            pointer-events: none; /* 下の白鍵を邪魔しない */
+            top: 4px;
+            left: 2px;
+            right: 2px;
+            height: 60%; /* 白鍵の長さの6割 */
+            pointer-events: none; /* 白鍵のタップを邪魔しない */
             display: flex;
-            flex-direction: column;
-            height: calc(100% - 10px);
         }
-        /* 白鍵1枚分の高さを基準に、黒鍵を隙間に配置 */
+        /* 白鍵1枚分と同じ幅のスペース */
         .black-gap {
             flex: 1;
             position: relative;
         }
+        /* 黒鍵本体（白鍵の境目にまたがって配置） */
         .key.black {
             position: absolute;
-            bottom: -12px; /* 白鍵の境目に配置 */
-            right: 0;
-            width: 55%;
-            height: 24px;
-            background: linear-gradient(to right, #444 0%, #111 100%);
-            border-radius: 3px 0 0 3px;
-            cursor: pointer;
-            pointer-events: auto; /* タップ可能にする */
+            right: -10px; /* 境目の真上に乗せる調整 */
+            width: 20px;  /* 黒鍵の幅 */
+            height: 100%;
+            background: linear-gradient(to bottom, #444 0%, #111 100%);
+            border-radius: 0 0 3px 3px;
             z-index: 2;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-        }
-        .key.black:active, .key.black.active {
-            background: #333;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
         }
     </style>
 </head>
 <body>
 
-    <h1>🎵 ドレミをおぼえよう！</h1>
-    <p>スマホをたて向きのままあそんでね！</p>
-
-    <div class="mode-container">
-        <button class="mode-btn" onclick="startFreePlay()">演奏モード</button>
-        <button class="mode-btn" onclick="startQuiz()" style="background-color: #2196f3; box-shadow: 0 3px #1976d2;">おとあてクイズ</button>
-    </div>
-
-    <div id="quiz-area">
-        <div id="msg">「おとをきく」をおしてね</div>
-        <button class="mode-btn" style="background-color:#ff9800; box-shadow:0 3px #e65100; padding: 6px 12px; font-size:13px;" onclick="playTargetSound()">📢 おとをきく</button>
-    </div>
-
-    <!-- 縦型ピアノ -->
-    <div class="piano-container">
-        <!-- 白鍵層 -->
-        <div class="white-keys">
-            <div class="key white" onclick="pressKey('ド↑', 523.25)">ド (高)</div>
-            <div class="key white" onclick="pressKey('シ', 493.88)">シ</div>
-            <div class="key white" onclick="pressKey('ラ', 440.00)">ラ</div>
-            <div class="key white" onclick="pressKey('ソ', 392.00)">ソ</div>
-            <div class="key white" onclick="pressKey('ファ', 349.23)">ファ</div>
-            <div class="key white" onclick="pressKey('ミ', 329.63)">ミ</div>
-            <div class="key white" onclick="pressKey('レ', 293.66)">レ</div>
-            <div class="key white" onclick="pressKey('ド', 261.63)">ド (低)</div>
+    <!-- 上半分のコンテンツ領域 -->
+    <div class="top-content">
+        <h1>🎵 ドレミをおぼえよう！</h1>
+        
+        <div class="mode-container">
+            <button class="mode-btn" onclick="startFreePlay()">えんそうモード</button>
+            <button class="mode-btn" onclick="startQuiz()" style="background-color: #2196f3; box-shadow: 0 3px #1976d2;">おとあてクイズ</button>
         </div>
 
-        <!-- 黒鍵層（白鍵の隙間に合わせて配置） -->
+        <div id="quiz-area">
+            <div id="msg">「おとをきく」をおしてね</div>
+            <button class="mode-btn" style="background-color:#ff9800; box-shadow:0 3px #e65100; padding: 6px 16px; font-size:14px;" onclick="playTargetSound()">📢 おとをきく</button>
+        </div>
+    </div>
+
+    <!-- 🎹 下半分のピアノ鍵盤（スマホ縦持ち画面で横に並ぶ） -->
+    <div class="piano-container">
+        <!-- 白鍵（ドレミファソラシド） -->
+        <div class="white-keys">
+            <div class="key white" onclick="pressKey('ド', 261.63)">ド</div>
+            <div class="key white" onclick="pressKey('レ', 293.66)">レ</div>
+            <div class="key white" onclick="pressKey('ミ', 329.63)">ミ</div>
+            <div class="key white" onclick="pressKey('ファ', 349.23)">ファ</div>
+            <div class="key white" onclick="pressKey('ソ', 392.00)">ソ</div>
+            <div class="key white" onclick="pressKey('ラ', 440.00)">ラ</div>
+            <div class="key white" onclick="pressKey('シ', 493.88)">シ</div>
+            <div class="key white" onclick="pressKey('ド↑', 523.25)">ド</div>
+        </div>
+
+        <!-- 黒鍵（見た目の位置理解のための表示専用。タップは無効） -->
         <div class="black-keys-overlay">
-            <div class="black-gap"></div> <!-- ド↑ の下（シの上）は黒鍵なし -->
-            <div class="black-gap"><div class="key black" onclick="pressKey('シ♭', 466.16)"></div></div>
-            <div class="black-gap"><div class="key black" onclick="pressKey('ソ♯', 415.30)"></div></div>
-            <div class="black-gap"><div class="key black" onclick="pressKey('ファ♯', 369.99)"></div></div>
-            <div class="black-gap"></div> <!-- ファの下（ミの上）は黒鍵なし -->
-            <div class="black-gap"><div class="key black" onclick="pressKey('ミ♭', 311.13)"></div></div>
-            <div class="black-gap"><div class="key black" onclick="pressKey('レ♭', 277.18)"></div></div>
-            <div class="black-gap"></div> <!-- 一番下のド の下 -->
+            <div class="black-gap"><div class="key black"></div></div> <!-- ドとレの間 -->
+            <div class="black-gap"><div class="key black"></div></div> <!-- レとミの間 -->
+            <div class="black-gap"></div> <!-- ミとファの間（黒鍵なし） -->
+            <div class="black-gap"><div class="key black"></div></div> <!-- ファとソの間 -->
+            <div class="black-gap"><div class="key black"></div></div> <!-- ソとラの間 -->
+            <div class="black-gap"><div class="key black"></div></div> <!-- ラとシの間 -->
+            <div class="black-gap"></div> <!-- シとド↑の間（黒鍵なし） -->
         </div>
     </div>
 
@@ -221,7 +217,6 @@
         let isQuizMode = false;
         let currentTarget = null;
         
-        // クイズの出題対象（今回は覚えやすいよう白鍵の「ドレミファソラシド」から出題します）
         const quizNotes = [
             { name: 'ド', freq: 261.63 },
             { name: 'レ', freq: 293.66 },
