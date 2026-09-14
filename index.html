@@ -76,7 +76,7 @@
         .piano-container {
             position: relative;
             width: 100%;
-            max-width: 360px; /* スマホの幅にフィット */
+            max-width: 360px;
             height: 200px;
             margin: 0 auto 30px auto;
             background: #222;
@@ -85,7 +85,7 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
         }
         
-        /* 白鍵（左から右へ並ぶ） */
+        /* 白鍵 */
         .white-keys {
             display: flex;
             height: 100%;
@@ -122,20 +122,18 @@
             top: 4px;
             left: 2px;
             right: 2px;
-            height: 60%; /* 白鍵の長さの6割 */
-            pointer-events: none; /* 白鍵のタップを邪魔しない */
+            height: 60%;
+            pointer-events: none;
             display: flex;
         }
-        /* 白鍵1枚分と同じ幅のスペース */
         .black-gap {
             flex: 1;
             position: relative;
         }
-        /* 黒鍵本体（白鍵の境目にまたがって配置） */
         .key.black {
             position: absolute;
-            right: -10px; /* 境目の真上に乗せる調整 */
-            width: 20px;  /* 黒鍵の幅 */
+            right: -10px;
+            width: 20px;
             height: 100%;
             background: linear-gradient(to bottom, #444 0%, #111 100%);
             border-radius: 0 0 3px 3px;
@@ -146,7 +144,6 @@
 </head>
 <body>
 
-    <!-- 上半分のコンテンツ領域 -->
     <div class="top-content">
         <h1>🎵 ドレミをおぼえよう！</h1>
         
@@ -161,33 +158,49 @@
         </div>
     </div>
 
-    <!-- 🎹 下半分のピアノ鍵盤（スマホ縦持ち画面で横に並ぶ） -->
+    <!-- 🎹 下半分のピアノ鍵盤 -->
     <div class="piano-container">
-        <!-- 白鍵（ドレミファソラシド） -->
         <div class="white-keys">
-            <div class="key white" onclick="pressKey('ド', 261.63)">ド</div>
-            <div class="key white" onclick="pressKey('レ', 293.66)">レ</div>
-            <div class="key white" onclick="pressKey('ミ', 329.63)">ミ</div>
-            <div class="key white" onclick="pressKey('ファ', 349.23)">ファ</div>
-            <div class="key white" onclick="pressKey('ソ', 392.00)">ソ</div>
-            <div class="key white" onclick="pressKey('ラ', 440.00)">ラ</div>
-            <div class="key white" onclick="pressKey('シ', 493.88)">シ</div>
-            <div class="key white" onclick="pressKey('ド↑', 523.25)">ド</div>
+            <div class="key white" onclick="pressKey('ド')">ド</div>
+            <div class="key white" onclick="pressKey('レ')">レ</div>
+            <div class="key white" onclick="pressKey('ミ')">ミ</div>
+            <div class="key white" onclick="pressKey('ファ')">ファ</div>
+            <div class="key white" onclick="pressKey('ソ')">ソ</div>
+            <div class="key white" onclick="pressKey('ラ')">ラ</div>
+            <div class="key white" onclick="pressKey('シ')">シ</div>
+            <div class="key white" onclick="pressKey('ド↑')">ド</div>
         </div>
 
-        <!-- 黒鍵（見た目の位置理解のための表示専用。タップは無効） -->
         <div class="black-keys-overlay">
-            <div class="black-gap"><div class="key black"></div></div> <!-- ドとレの間 -->
-            <div class="black-gap"><div class="key black"></div></div> <!-- レとミの間 -->
-            <div class="black-gap"></div> <!-- ミとファの間（黒鍵なし） -->
-            <div class="black-gap"><div class="key black"></div></div> <!-- ファとソの間 -->
-            <div class="black-gap"><div class="key black"></div></div> <!-- ソとラの間 -->
-            <div class="black-gap"><div class="key black"></div></div> <!-- ラとシの間 -->
-            <div class="black-gap"></div> <!-- シとド↑の間（黒鍵なし） -->
+            <div class="black-gap"><div class="key black"></div></div>
+            <div class="black-gap"><div class="key black"></div></div>
+            <div class="black-gap"></div>
+            <div class="black-gap"><div class="key black"></div></div>
+            <div class="black-gap"><div class="key black"></div></div>
+            <div class="black-gap"><div class="key black"></div></div>
+            <div class="black-gap"></div>
         </div>
     </div>
 
     <script>
+        // 用意してもらった音声ファイルのマッピング
+        const voiceFiles = {
+            'ド': 'おへそのド.mp3',
+            'レ': 'れ.mp3',
+            'ミ': 'み.mp3',
+            'ファ': 'ふぁ.mp3',
+            'ソ': 'そ.mp3',
+            'ラ': 'ら.mp3',
+            'シ': 'し.mp3',
+            'ド↑': '高いど.mp3'
+        };
+
+        // 各音の周波数データ（クイズ用のピアノ音に使用）
+        const pianoFreqs = {
+            'ド': 261.63, 'レ': 293.66, 'ミ': 329.63, 'ファ': 349.23,
+            'ソ': 392.00, 'ラ': 440.00, 'シ': 493.88, 'ド↑': 523.25
+        };
+
         let audioCtx = null;
         function getAudioContext() {
             if (!audioCtx) {
@@ -196,40 +209,46 @@
             return audioCtx;
         }
 
-        function playTone(frequency) {
+        // 🎵 クイズ用の「綺麗なピアノの音」をプログラムで合成して鳴らす関数
+        function playPianoTone(frequency) {
             const ctx = getAudioContext();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             
-            osc.type = 'triangle';
+            // ピアノに近い減衰音を作るため、複数の倍音をほんのり混ぜる
+            osc.type = 'sine'; 
             osc.frequency.setValueAtTime(frequency, ctx.currentTime);
             
-            gain.gain.setValueAtTime(0.4, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+            // 音量の変化（アタックは強く、その後スッと消えるピアノの特性）
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02); // 素早い立ち上がり
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2); // 長めの余韻
             
             osc.connect(gain);
             gain.connect(ctx.destination);
             
             osc.start();
-            osc.stop(ctx.currentTime + 0.6);
+            osc.stop(ctx.currentTime + 1.2);
+        }
+
+        // 🗣️ 鍵盤を押したときの「声の音声」を再生する関数
+        function playVoice(noteName) {
+            const filename = voiceFiles[noteName];
+            if (filename) {
+                const audio = new Audio(filename);
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("音声再生エラー:", e));
+            }
         }
 
         let isQuizMode = false;
         let currentTarget = null;
-        
-        const quizNotes = [
-            { name: 'ド', freq: 261.63 },
-            { name: 'レ', freq: 293.66 },
-            { name: 'ミ', freq: 329.63 },
-            { name: 'ファ', freq: 349.23 },
-            { name: 'ソ', freq: 392.00 },
-            { name: 'ラ', freq: 440.00 },
-            { name: 'シ', freq: 493.88 },
-            { name: 'ド↑', freq: 523.25 }
-        ];
+        const quizNotes = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド↑'];
 
-        function pressKey(noteName, frequency) {
-            playTone(frequency);
+        // 鍵盤が押されたとき
+        function pressKey(noteName) {
+            // 演奏時・解答時は必ず「声の音声」を鳴らす
+            playVoice(noteName);
 
             if (isQuizMode) {
                 if (!currentTarget) {
@@ -237,9 +256,9 @@
                     return;
                 }
                 
-                if (noteName === currentTarget.name) {
+                if (noteName === currentTarget) {
                     document.getElementById('msg').innerHTML = '<span style="color:green;">⭕ せいかい！ すごい！</span>';
-                    currentTarget = null;
+                    currentTarget = null; 
                 } else {
                     document.getElementById('msg').innerHTML = '<span style="color:red;">❌ ちがうよ！もう一回きいてみてね</span>';
                 }
@@ -258,14 +277,18 @@
             document.getElementById('msg').innerText = '「おとをきく」ボタンをおしてね';
         }
 
+        // クイズの音をきくとき
         function playTargetSound() {
             if (!isQuizMode) return;
             if (!currentTarget) {
                 const randomIndex = Math.floor(Math.random() * quizNotes.length);
                 currentTarget = quizNotes[randomIndex];
-                document.getElementById('msg').innerText = 'いまの音はなーんだ？';
             }
-            playTone(currentTarget.freq);
+            
+            // クイズの問題を出すときは、声ではなく「ピアノの音」を鳴らす
+            const freq = pianoFreqs[currentTarget];
+            playPianoTone(freq);
+            document.getElementById('msg').innerText = 'いまの音はなーんだ？';
         }
     </script>
 </body>
