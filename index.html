@@ -5,13 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>あそぼう！おとのかいだん</title>
     <style>
-        /* 画面固定と基本デザイン（横向き専用設計） */
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #e0f2fe; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        
         #app-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
-
-        /* 左上の切り替えボタン */
         #mode-toggle-btn {
             position: absolute; top: 15px; left: 15px; width: 80px; height: 80px;
             background-color: #ffffff; border: 4px solid #38bdf8; border-radius: 20px;
@@ -20,14 +16,10 @@
         }
         #mode-toggle-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #0284c7; }
         #mode-icon { font-size: 32px; margin-bottom: 2px; }
-
-        /* ナビゲーションアナウンス */
         #voice-alert {
             position: absolute; top: 20px; width: 100%; text-align: center;
             font-size: 24px; font-weight: bold; color: #0369a1; z-index: 10; pointer-events: none;
         }
-
-        /* 1. 音の階段エリア（画面上半分） */
         #staircase-area { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px; position: relative; }
         .stair-container { display: flex; align-items: flex-end; justify-content: center; height: 100%; width: 85%; max-width: 900px; }
         .stair {
@@ -38,16 +30,12 @@
         .stair-text { text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
         .stair.active-target { animation: pulse 1s infinite alternate; border: 4px solid #ffffff; }
         .stair.disabled { opacity: 0.3; cursor: not-allowed; }
-
-        /* キャラクター（猫ちゃん仮画像用） */
         .cat-character {
             position: absolute; top: -55px; width: 50px; height: 50px;
             background-color: #f59e0b; border-radius: 50%; border: 3px solid white;
             display: flex; align-items: center; justify-content: center; font-size: 28px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        /* 2. カタカナ鍵盤エリア（画面下半分：初期は非表示、レベルアップで登場） */
         #keyboard-area {
             height: 40%; background-color: #1e293b; display: flex; padding: 10px 40px 20px 40px;
             transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.075, 0.82, 0.165, 1);
@@ -59,8 +47,6 @@
             font-size: 26px; font-weight: bold; color: #334155; box-shadow: 0 10px 0 #cbd5e1; cursor: pointer;
         }
         .key:active { transform: translateY(6px); box-shadow: 0 4px 0 #cbd5e1; }
-
-        /* 階段のピカピカアニメーション */
         @keyframes pulse {
             0% { transform: scale(1); filter: brightness(1); }
             100% { transform: scale(1.03); filter: brightness(1.3); }
@@ -70,30 +56,18 @@
 <body>
 
 <div id="app-container">
-    <!-- 左上切り替えボタン -->
     <div id="mode-toggle-btn" onclick="toggleMode()">
         <span id="mode-icon">🗣️</span>
         <span id="mode-text">こえ＋音</span>
     </div>
-
-    <!-- 声かけナビゲーション -->
-    <div id="voice-alert" id="navigation-text">いっしょに のぼろう！</div>
-
-    <!-- 1. ひらがな音の階段 -->
+    <div id="voice-alert">いっしょに のぼろう！</div>
     <div id="staircase-area">
-        <div class="stair-container" id="staircase">
-            <!-- JavaScriptで階段を動的に生成します -->
-        </div>
+        <div class="stair-container" id="staircase"></div>
     </div>
-
-    <!-- 2. カタカナ鍵盤 -->
-    <div id="keyboard-area" id="keyboard">
-        <!-- JavaScriptで鍵盤を動的に生成します -->
-    </div>
+    <div id="keyboard-area" id="keyboard"></div>
 </div>
 
 <script>
-    // 音楽データと設定
     const scaleData = [
         { nameHiragana: "ど", nameKatakana: "ド", color: "#ef4444", note: "C4", height: 25 },
         { nameHiragana: "れ", nameKatakana: "レ", color: "#f97316", note: "D4", height: 33 },
@@ -105,8 +79,7 @@
         { nameHiragana: "ど", nameKatakana: "ド", color: "#dc2626", note: "C5", height: 81 }
     ];
 
-    // アプリの状態管理
-    let currentMode = 0; // 0: ピアノ+声, 1: ピアノのみ, 2: いぬ, 3: ねこ
+    let currentMode = 0;
     const modes = [
         { icon: "🗣️", text: "こえ＋音" },
         { icon: "🎹", text: "ピアノのみ" },
@@ -114,21 +87,17 @@
         { icon: "🐱", text: "ねこ" }
     ];
 
-    let currentStep = 0; // 0〜7 (ど〜ど)
-    let isDescending = false; // false: のぼる, true: おりる
-    let isLevelUp = false; // 鍵盤が解放された自由演奏モード
-
-    // オーディオコンテキスト（ブラウザで音を鳴らす仕組み）
+    let currentStep = 0;
+    let isDescending = false;
+    let isLevelUp = false;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 初期化処理
     window.onload = () => {
         renderStaircase();
         renderKeyboard();
         updateNavigation();
     };
 
-    // 1. 階段の生成
     function renderStaircase() {
         const staircase = document.getElementById("staircase");
         staircase.innerHTML = "";
@@ -144,30 +113,26 @@
             text.className = "stair-text";
             text.innerText = data.nameHiragana;
             stair.appendChild(text);
-
             staircase.appendChild(stair);
         });
-        
-        // 最初の猫ちゃんキャラクターを設置
         injectCatCharacter(0);
     }
 
-    // 猫ちゃんキャラクターの表示
     function injectCatCharacter(index) {
-        // 既存の猫ちゃんを消去
         const oldCat = document.querySelector(".cat-character");
         if (oldCat) oldCat.remove();
-
         const targetStair = document.getElementById(`stair-${index}`);
-        const cat = document.createElement("div");
-        cat.className = "cat-character";
-        cat.innerText = "🐱"; // ここを将来的に本物の写真に変更できます
-        targetStair.appendChild(cat);
+        if(targetStair) {
+            const cat = document.createElement("div");
+            cat.className = "cat-character";
+            cat.innerText = "🐱";
+            targetStair.appendChild(cat);
+        }
     }
 
-    // 2. 鍵盤の生成
     function renderKeyboard() {
         const keyboard = document.getElementById("keyboard");
+        keyboard.innerHTML = "";
         scaleData.forEach((data, index) => {
             const key = document.createElement("div");
             key.className = "key";
@@ -176,7 +141,6 @@
             key.onclick = () => {
                 if (isLevelUp) {
                     playSound(index);
-                    // 鍵盤を押したとき、上の階段に猫ちゃんがピョンと移動する連動
                     injectCatCharacter(index);
                 }
             };
@@ -184,25 +148,23 @@
         });
     }
 
-    // ナビゲーション（光るターゲットと声かけ）の更新
     function updateNavigation() {
         if (isLevelUp) {
             document.getElementById("voice-alert").innerText = "じゆうに ひいてみよう！";
             return;
         }
-
-        // 全体の光を消す・無効化
         scaleData.forEach((_, index) => {
             const stair = document.getElementById(`stair-${index}`);
-            stair.classList.remove("active-target");
-            stair.classList.add("disabled");
+            if(stair) {
+                stair.classList.remove("active-target");
+                stair.classList.add("disabled");
+            }
         });
-
-        // 現在叩くべきターゲットだけを光らせ、有効化する
         const targetStair = document.getElementById(`stair-${currentStep}`);
-        targetStair.classList.remove("disabled");
-        targetStair.classList.add("active-target");
-
+        if(targetStair) {
+            targetStair.classList.remove("disabled");
+            targetStair.classList.add("active-target");
+        }
         if (!isDescending) {
             document.getElementById("voice-alert").innerText = "いっしょに のぼろう！";
         } else {
@@ -210,37 +172,27 @@
         }
     }
 
-    // 階段がタッチされた時の処理（自動ナビゲーション）
     function handleStairTouch(index) {
         if (isLevelUp) {
-            // 自由モードの時はどこを押しても鳴る
             playSound(index);
             injectCatCharacter(index);
             return;
         }
-
-        // ナビ中の場合、光っている場所以外は反応させない（ここがカバー設定！）
         if (index !== currentStep) return;
-
         playSound(index);
         injectCatCharacter(index);
 
-        // 次のステップの計算
         if (!isDescending) {
-            // のぼり中
             if (currentStep < scaleData.length - 1) {
                 currentStep++;
             } else {
-                // 登りきった！おりるモードへ
                 isDescending = true;
                 currentStep--;
             }
         } else {
-            // おり中
             if (currentStep > 0) {
                 currentStep--;
             } else {
-                // 降りきった！レベルアップ（鍵盤解放）
                 triggerLevelUp();
                 return;
             }
@@ -248,14 +200,35 @@
         updateNavigation();
     }
 
-    // レベルアップ！鍵盤を登場させる
     function triggerLevelUp() {
         isLevelUp = true;
         document.getElementById("voice-alert").innerText = "パチパチパチ！できたね！";
-        
-        // 全階段の制限を解除
         scaleData.forEach((_, index) => {
-            document.getElementById(`stair-${index}`).classList.remove("disabled", "active-target");
+            const stair = document.getElementById(`stair-${index}`);
+            if(stair) stair.classList.remove("disabled", "active-target");
         });
+        document.getElementById("keyboard").classList.add("show");
+    }
 
-        // 下から鍵盤を登場させる
+    function toggleMode() {
+        currentMode = (currentMode + 1) % modes.length;
+        document.getElementById("mode-icon").innerText = modes[currentMode].icon;
+        document.getElementById("mode-text").innerText = modes[currentMode].text;
+    }
+
+    function playSound(index) {
+        if (currentMode === 0) {
+            speakDoremi(scaleData[index].nameHiragana);
+        } else if (currentMode === 2) {
+            speakDoremi("ワン");
+        } else if (currentMode === 3) {
+            speakDoremi("ニャー");
+        }
+        const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(frequencies[index], audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+        osc.connect(gain);
