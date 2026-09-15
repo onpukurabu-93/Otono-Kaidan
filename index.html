@@ -6,7 +6,7 @@
     <title>あそぼう！おとのかいだん</title>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #e0f2fe; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #e0f2fe; font-family: sans-serif; }
         #app-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         #mode-toggle-btn {
             position: absolute; top: 15px; left: 15px; width: 80px; height: 80px;
@@ -64,7 +64,7 @@
     <div id="staircase-area">
         <div class="stair-container" id="staircase"></div>
     </div>
-    <div id="keyboard-area" id="keyboard"></div>
+    <div id="keyboard-area"></div>
 </div>
 
 <script>
@@ -131,7 +131,7 @@
     }
 
     function renderKeyboard() {
-        const keyboard = document.getElementById("keyboard");
+        const keyboard = document.getElementById("keyboard-area");
         keyboard.innerHTML = "";
         scaleData.forEach((data, index) => {
             const key = document.createElement("div");
@@ -207,7 +207,7 @@
             const stair = document.getElementById(`stair-${index}`);
             if(stair) stair.classList.remove("disabled", "active-target");
         });
-        document.getElementById("keyboard").classList.add("show");
+        document.getElementById("keyboard-area").classList.add("show");
     }
 
     function toggleMode() {
@@ -232,3 +232,4 @@
         gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
         osc.connect(gain);
+        gain.connect(audioCtx.destination);
